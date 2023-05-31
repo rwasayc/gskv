@@ -92,11 +92,29 @@ func TestAll(t *testing.T) {
 }
 
 func BenchmarkGet100000(b *testing.B) {
-	b.StopTimer()
 	db := Open()
+	Get100000(b, db)
+}
+func BenchmarkSKGet100000(b *testing.B) {
+	db := OpenSK()
+	Get100000(b, db)
+}
+
+func BenchmarkRadnomGet100000(b *testing.B) {
+	db := Open()
+	RandomGet100000(b, db)
+}
+func BenchmarkRadnomSKGet100000(b *testing.B) {
+	db := OpenSK()
+	RandomGet100000(b, db)
+}
+
+func RandomGet100000(b *testing.B, db *gskv) {
+	b.StopTimer()
 	limit := 100000
-	for i := 0; i <= limit; i++ {
-		db.Set([]byte(fmt.Sprintf("k%d", i)), []byte(fmt.Sprintf("v%d", i)))
+	for i := 0; i <= limit*10; i++ {
+		v := rand.Int31n(int32(limit))
+		db.Set([]byte(fmt.Sprintf("k%d", v)), []byte(fmt.Sprintf("v%d", v)))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -105,13 +123,11 @@ func BenchmarkGet100000(b *testing.B) {
 	}
 }
 
-func BenchmarkRandomGet100000(b *testing.B) {
+func Get100000(b *testing.B, db *gskv) {
 	b.StopTimer()
-	db := Open()
 	limit := 100000
-	for i := 0; i <= limit*10; i++ {
-		v := rand.Int31n(int32(limit))
-		db.Set([]byte(fmt.Sprintf("k%d", v)), []byte(fmt.Sprintf("v%d", v)))
+	for i := 0; i <= limit; i++ {
+		db.Set([]byte(fmt.Sprintf("k%d", i)), []byte(fmt.Sprintf("v%d", i)))
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
