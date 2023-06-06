@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 )
 
@@ -89,24 +90,49 @@ func TestAll(t *testing.T) {
 			db.Delete(c.ArgK)
 		}
 	}
+
+	db.Close()
+	os.Remove("./def.gs")
+}
+
+func TestCloseOpen(t *testing.T) {
+	db := Open()
+	for i := 0; i < 1000; i++ {
+		db.Set([]byte(fmt.Sprintf("k_%d", i)), []byte(fmt.Sprintf("v_%d", i)))
+	}
+	for i := 0; i < 100; i++ {
+		db.Delete([]byte(fmt.Sprintf("k_%d", i)))
+	}
+
+	db.Close()
+
+	db = Open()
+	for i := 0; i < 1000; i++ {
+		k := fmt.Sprintf("k_%d", i)
+		v := db.Get([]byte(k))
+		if i < 100 {
+			if len(v) != 0 {
+				t.Errorf("get deleted k(%s)  v(%s)", k, string(v))
+			}
+		} else {
+			if !bytes.Equal([]byte(fmt.Sprintf("v_%d", i)), v) {
+				t.Errorf("not equal k(%s)  v(%s)", k, string(v))
+			}
+		}
+	}
+	os.Remove("./def.gs")
 }
 
 func BenchmarkGet100000(b *testing.B) {
 	db := Open()
 	Get100000(b, db)
-}
-func BenchmarkSKGet100000(b *testing.B) {
-	db := OpenSK()
-	Get100000(b, db)
+	os.Remove("./def.gs")
 }
 
 func BenchmarkRadnomGet100000(b *testing.B) {
 	db := Open()
 	RandomGet100000(b, db)
-}
-func BenchmarkRadnomSKGet100000(b *testing.B) {
-	db := OpenSK()
-	RandomGet100000(b, db)
+	os.Remove("./def.gs")
 }
 
 func RandomGet100000(b *testing.B, db *gskv) {
